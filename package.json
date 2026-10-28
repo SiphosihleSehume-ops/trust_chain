@@ -1,0 +1,29 @@
+{
+  "name": "product-trace",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "hardhat test",
+    "compile": "hardhat compile",
+    "node": "hardhat node",
+    "deploy:local": "hardhat run scripts/deploy.ts --network localhost",
+    "deploy:sepolia": "hardhat run scripts/deploy.ts --network sepolia",
+    "typecheck": "tsc --noEmit -p ."
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "devDependencies": {
+    "@nomicfoundation/hardhat-toolbox-mocha-ethers": "^4.0.0",
+    "@types/mocha": "^10.0.10",
+    "dotenv": "^18.0.9",
+    "ethers": "^6.17.0",
+    "hardhat": "^3.21.1",
+    "solc": "^0.8.28"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.6.1"
+  }
+}

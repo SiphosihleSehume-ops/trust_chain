@@ -1,0 +1,9 @@
+node_modules/
+.env
+artifacts/
+cache/
+types/
+coverage/
+deployments/localhost.json
+deployments/hardhatMainnet.json
+deployments/default.json
