@@ -78,4 +78,16 @@ contract ProductTraceability is AccessControl {
     error NotShipmentRecipient(uint256 shipmentId, address caller);
     error ShipmentAlreadyReceived(uint256 shipmentId);
 
+    // Setup and access control
+
+    /// @param initialAdmin Wallet that can approve/revoke suppliers. Use a multisig later.
+    constructor(address initialAdmin) {
+        if (initialAdmin == address(0)) revert InvalidAddress();
+        _grantRole(DEFAULT_ADMIN_ROLE, initialAdmin);
+    }
+
+    modifier onlySupplier() {
+        if (!isSupplier[msg.sender]) revert NotAuthorisedSupplier(msg.sender);
+        _;
+    }
 }
