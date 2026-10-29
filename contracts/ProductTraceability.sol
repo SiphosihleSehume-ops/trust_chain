@@ -90,4 +90,21 @@ contract ProductTraceability is AccessControl {
         if (!isSupplier[msg.sender]) revert NotAuthorisedSupplier(msg.sender);
         _;
     }
+
+    // Administrator operations
+
+    /// @notice Approve a supplier wallet. Business identity must be checked off-chain first.
+    function approveSupplier(address supplier) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (supplier == address(0)) revert InvalidAddress();
+        if (isSupplier[supplier]) revert SupplierAlreadyApproved(supplier);
+        isSupplier[supplier] = true;
+        emit SupplierApproved(supplier, msg.sender);
+    }
+
+    /// @notice Revoke a supplier. Existing records stay on-chain; new actions are blocked.
+    function revokeSupplier(address supplier) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        if (!isSupplier[supplier]) revert SupplierNotApproved(supplier);
+        isSupplier[supplier] = false;
+        emit SupplierRevoked(supplier, msg.sender);
+    }
 }
