@@ -107,4 +107,59 @@ contract ProductTraceability is AccessControl {
         isSupplier[supplier] = false;
         emit SupplierRevoked(supplier, msg.sender);
     }
+
+     // Supplier operations
+
+    /// @notice Register a batch. `batchId` must be unique across all suppliers.
+    /// @param batchId      Unique identifier (e.g. keccak256 of "BATCH-2026-0001").
+    /// @param metadataHash Hash committing to the off-chain metadata/document.
+    function registerBatch(bytes32 batchId, bytes32 metadataHash) external onlySupplier {
+        if (batchId == bytes32(0)) revert InvalidBatchId();
+        if (metadataHash == bytes32(0)) revert InvalidMetadataHash();
+        if (_batches[batchId].supplier != address(0)) revert BatchAlreadyRegistered(batchId);
+
+        _batches[batchId] = Batch({
+            supplier: msg.sender,
+            metadataHash: metadataHash,
+            registeredAt: uint64(block.timestamp),
+            registeredBlock: uint64(block.number)
+        });
+
+        emit BatchRegistered(batchId, msg.sender, metadataHash);
+    }
+
+    /// @notice Record that a batch is being shipped to `recipient`.
+    /// @dev MVP rule: a batch can have only one unconfirmed shipment at a time.
+    function recordShipment(bytes32 batchId, address recipient)
+        external
+        onlySupplier
+        returns (uint256 shipmentId)
+    {
+        Batch storage batch = _batches[batchId];
+        if (batch.supplier == address(0)) revert BatchNotFound(batchId);
+        if (batch.supplier != msg.sender) revert NotBatchSupplier(batchId, msg.sender);
+        if (recipient == address(0) || recipient == msg.sender) revert InvalidRecipient(recipient);
+
+        uint256[] storage ids = _batchShipmentIds[batchId];
+        if (ids.length > 0) {
+            uint256 lastId = ids[ids.length - 1];
+            if (_shipments[lastId].receivedAt == 0) revert OpenShipmentExists(batchId, lastId);
+        }
+
+        shipmentId = ++shipmentCount;
+        _shipments[shipmentId] = Shipment({
+            batchId: batchId,
+            sender: msg.sender,
+            recipient: recipient,
+            shippedAt: uint64(block.timestamp),
+            shippedBlock: uint64(block.number),
+            receivedAt: 0,
+            receivedBlock: 0
+        });
+        ids.push(shipmentId);
+
+        emit ShipmentRecorded(shipmentId, batchId, msg.sender, recipient);
+    }
+
+
 }
