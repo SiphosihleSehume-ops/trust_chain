@@ -161,5 +161,19 @@ contract ProductTraceability is AccessControl {
         emit ShipmentRecorded(shipmentId, batchId, msg.sender, recipient);
     }
 
+    // Distributor operations
+
+    /// @notice Confirm receipt. Only the recipient named in the shipment can call this.
+    function confirmReceipt(uint256 shipmentId) external {
+        Shipment storage shipment = _shipments[shipmentId];
+        if (shipment.sender == address(0)) revert ShipmentNotFound(shipmentId);
+        if (shipment.recipient != msg.sender) revert NotShipmentRecipient(shipmentId, msg.sender);
+        if (shipment.receivedAt != 0) revert ShipmentAlreadyReceived(shipmentId);
+
+        shipment.receivedAt = uint64(block.timestamp);
+        shipment.receivedBlock = uint64(block.number);
+
+        emit ReceiptConfirmed(shipmentId, shipment.batchId, msg.sender);
+    }
 
 }
