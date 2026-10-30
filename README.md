@@ -72,3 +72,20 @@ scripts/deploy.ts                   deploy script
 hardhat.config.ts                   Hardhat 3 config
 .env.example                        env template (no real secrets)
 ```
+
+## Run 
+
+```bash
+npm install --save-dev @types/node
+```
+to install necessary node modules
+
+## 
+
+```bash
+npx hardhat run scripts/deploy.ts                      (throwaway in-process network)
+
+npx hardhat run scripts/deploy.ts --network localhost  (needs `npx hardhat node` running)
+
+npx hardhat run scripts/deploy.ts --network sepolia    (needs .env, see .env.example)
+```
