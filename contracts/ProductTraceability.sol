@@ -176,4 +176,31 @@ contract ProductTraceability is AccessControl {
         emit ReceiptConfirmed(shipmentId, shipment.batchId, msg.sender);
     }
 
+    // Verification (read-only) operations
+
+    /// @notice Returns the batch record. `exists == false` means it was never registered.
+    function getBatch(bytes32 batchId)
+        external
+        view
+        returns (bool exists, Batch memory batch)
+    {
+        batch = _batches[batchId];
+        exists = batch.supplier != address(0);
+    }
+
+    /// @notice Returns one shipment. `exists == false` means the id is unknown.
+    function getShipment(uint256 shipmentId)
+        external
+        view
+        returns (bool exists, Shipment memory shipment)
+    {
+        shipment = _shipments[shipmentId];
+        exists = shipment.sender != address(0);
+    }
+
+    /// @notice All shipment ids recorded for a batch, oldest first.
+    function getBatchShipmentIds(bytes32 batchId) external view returns (uint256[] memory) {
+        return _batchShipmentIds[batchId];
+    }
+
 }
