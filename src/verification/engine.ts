@@ -49,3 +49,38 @@ function makeCheck(
 ): Check {
   return { id, title, status, headline, detail };
 }
+
+// the engine
+
+export function verifyBatch(
+  chain: ChainEvidence,
+  metadata: MetadataEvidence,
+  options: VerifyOptions = {},
+): VerificationReport {
+  const base = {
+    batchId: chain.batchId,
+    checkedAtBlock: chain.checkedAtBlock,
+    limitations: [...LIMITATIONS],
+  };
+
+  // 1. Does the batch exist at all? If not, nothing else can be said.
+  if (!chain.batch.exists) {
+    return {
+      ...base,
+      overall: "not_found",
+      summary:
+        "No registration was found for this batch identifier. This does not show the product is fake or genuine; it only means no record exists on this contract.",
+      checks: [
+        makeCheck(
+          "batch_registered",
+          "Batch registration",
+          "missing",
+          "No registration found for this identifier.",
+          `No BatchRegistered record exists for ${chain.batchId}.`,
+        ),
+      ],
+      warnings: [],
+      shipments: [],
+    };
+  }
+}
