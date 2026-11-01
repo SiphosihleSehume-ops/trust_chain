@@ -83,4 +83,112 @@ export function verifyBatch(
       shipments: [],
     };
   }
+
+  const checks: Check[] = [];
+  const warnings: string[] = [];
+  const batch = chain.batch;
+  const reg = chain.registeredEvent;
+  const shipments = [...chain.shipments].sort((a, b) => a.state.id - b.state.id);
+  const latest = shipments.length > 0 ? shipments[shipments.length - 1] : undefined;
+
+  checks.push(
+    makeCheck(
+      "batch_registered",
+      "Batch registration",
+      "verified",
+      "Registration found.",
+      `Batch registered by ${batch.supplier} at block ${batch.registeredBlock}.`,
+    ),
+  );
+
+  // 2. Was the registering wallet authorised AT THE TIME of registration?
+  //    We replay approve/revoke events up to the registration event. We do not trust
+  //    the supplier's CURRENT status for this, because it may have changed since.
+  const supplierEvents: SupplierEvent[] = chain.supplierEvents
+    .filter((e) => sameAddress(e.supplier, batch.supplier))
+    .sort(compare);
+
+  let authorisingEvent: SupplierEvent | undefined;
+  if (!reg) {
+    checks.push(
+      makeCheck(
+        "supplier_authorised_at_registration",
+        "Supplier authorised at registration",
+        "missing",
+        "Supplier authorisation at registration could not be established.",
+        "The BatchRegistered event was not found, so authorisation cannot be replayed to that point in history.",
+      ),
+    );
+  } else {
+    let authorised = false;
+    let lastBefore: SupplierEvent | undefined;
+    for (const e of supplierEvents) {
+      if (compare(e, reg) >= 0) break;
+      lastBefore = e;
+      authorised = e.type === "approved";
+      authorisingEvent = authorised ? e : undefined;
+    }
+    if (authorised) {
+      checks.push(
+        makeCheck(
+          "supplier_authorised_at_registration",
+          "Supplier authorised at registration",
+          "verified",
+          "Supplier was authorised when the batch was registered.",
+          `Approved at ${where(authorisingEvent!)}, before registration at ${where(reg)}.`,
+        ),
+      );
+    } else {
+      checks.push(
+        makeCheck(
+          "supplier_authorised_at_registration",
+          "Supplier authorised at registration",
+          "failed",
+          "Supplier was NOT authorised when the batch was registered.",
+          lastBefore
+            ? `Latest authorisation event before registration was a revocation at ${where(lastBefore)}.`
+            : `No approval event for ${batch.supplier} exists before registration at ${where(reg)}.`,
+        ),
+      );
+    }
+  }
+
+  if (!chain.currentlyAuthorised) {
+    warnings.push(
+      "This supplier's authorisation has since been revoked. Records made while it was authorised are unchanged, but new activity from it is blocked.",
+    );
+  }
+
+  // 3. Does the retrieved off-chain metadata hash to the committed value?
+  if (!metadata.found) {
+    checks.push(
+      makeCheck(
+        "metadata_hash_matches",
+        "Metadata hash",
+        "missing",
+        "Off-chain metadata was not available to check against the committed hash.",
+        `No stored metadata was found for committed hash ${batch.metadataHash}.`,
+      ),
+    );
+  } else if (sameHex(metadata.computedHash, batch.metadataHash)) {
+    checks.push(
+      makeCheck(
+        "metadata_hash_matches",
+        "Metadata hash",
+        "verified",
+        "Metadata hash matches the on-chain commitment.",
+        `Recomputed hash equals committed hash ${batch.metadataHash}. This shows integrity, not truthfulness.`,
+      ),
+    );
+  } else {
+    checks.push(
+      makeCheck(
+        "metadata_hash_matches",
+        "Metadata hash",
+        "failed",
+        "Metadata does NOT match the on-chain commitment.",
+        `Committed ${batch.metadataHash} but the retrieved content hashes to ${metadata.computedHash}.`,
+      ),
+    );
+  }
 }
