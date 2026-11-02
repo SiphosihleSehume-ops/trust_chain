@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Check a product batch</title>
+  <meta name="description" content="Look up a product batch and see its supplier, shipment and delivery records, and what can and cannot be confirmed.">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header class="site">
+    <div class="wrap">
+      <a class="brand" href="./">Batch Check</a>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="lookup" aria-labelledby="lookup-title">
+      <h1 id="lookup-title">Check where a product batch came from</h1>
+      <p class="lede">Enter the batch code printed on the pack, or scan its QR code. This page reads the public
+        blockchain record for that batch and shows what can be confirmed and what cannot.</p>
+
+      <form id="form" novalidate>
+        <label for="batch">Batch code</label>
+        <div class="field">
+          <input id="batch" name="batch" type="text" autocomplete="off" autocapitalize="characters"
+                 spellcheck="false" placeholder="For example BATCH-2026-0001" maxlength="128" aria-describedby="batch-error">
+          <button type="submit" id="submit">Check batch</button>
+        </div>
+        <p id="batch-error" class="error" role="alert" hidden></p>
+
+        <p class="alt">
+          <button type="button" id="scan" class="text" hidden>Scan a QR code with your camera</button>
+        </p>
+
+        <details class="optional">
+          <summary>I know who should have received this batch</summary>
+          <label for="recipient">Recipient wallet address</label>
+          <input id="recipient" name="recipient" type="text" autocomplete="off" spellcheck="false" placeholder="0x…">
+          <p class="hint">If the shipment names a different wallet, the check will fail.</p>
+        </details>
+      </form>
+
+      <div id="scanner" class="scanner" hidden>
+        <video id="video" playsinline muted></video>
+        <p class="hint">Point the camera at the QR code on the pack.</p>
+        <button type="button" id="stop-scan" class="text">Cancel scanning</button>
+      </div>
+    </section>
+
+    <div id="status" class="sr-only" aria-live="polite"></div>
+    <section id="result" class="result" hidden></section>
+  </main>
+
+  <footer class="site">
+    <div class="wrap">
+      <p>Results come from fixed rules applied to blockchain records. They show whether the records are complete and
+        consistent, not whether the physical item in your hand is genuine.</p>
+    </div>
+  </footer>
+
+  <script src="vendor/qrcode.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
